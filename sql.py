@@ -24,28 +24,28 @@ def execute_sql(conn, sql, params=None):
     :param params
     :return:
     """
+    c = conn.cursor()
     try:
-        c = conn.cursor()
         if params is None:
             c.execute(sql)
         else:
             c.execute(sql, params)
-        conn.commit()
-        return c
     except Error as e:
         logging.error(e)
+    return c
 
 
 def create_table(conn):
-    sql = """CREATE TABLE passwords (
-    id INT PRIMARY KEY,
+    sql = """CREATE TABLE if not exists passwords (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     name VARCHAR(255) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL
     );"""
     execute_sql(conn, sql)
+    conn.commit()
 
 
-def add_password(conn, password):
+def add_password(conn, name, password):
     """
     Create a new password into the passwords table
     :param conn:
@@ -54,7 +54,8 @@ def add_password(conn, password):
     """
     sql = '''INSERT INTO passwords(name, password)
              VALUES(?,?)'''
-    cur = execute_sql(conn, sql, password)
+    cur = execute_sql(conn, sql, (name, password))
+    conn.commit()
     return cur.lastrowid
 
 
@@ -96,9 +97,9 @@ def select_password(conn, name):
     :param name: name to which the password is assigned
     :return:
     """
-    sql = f"SELECT FROM passwords WHERE name=?"
+    sql = f"SELECT password FROM passwords WHERE name=?"
     cur = execute_sql(conn, sql, (name,))
-    password = cur.fetchone()[2]
+    password = cur.fetchone()
     return password
 
 
@@ -119,7 +120,8 @@ def update(conn, id, **kwargs):
              WHERE id = ?'''
 
     try:
-        execute_sql(sql, values)
+        execute_sql(conn, sql, values)
+        conn.commit()
     except sqlite3.OperationalError as e:
         logging.ERROR(e)
 
@@ -132,9 +134,6 @@ def delete(conn, id):
     :return:
     """
     sql = "DELETE FROM passwords WHERE id=?"
-    execute_sql(sql, (id,))
+    execute_sql(conn, sql, (id,))
+    conn.commit()
 
-
-if __name__ == '__main__':
-    conn = create_connection(r"database.db")
-    conn.close()
