@@ -1,14 +1,15 @@
 import sql
 from tkinter import Tk
+import security
 
 
 def ask_for_prompt():
     """Ask the user to choose an option from menu"""
     prompt = """Choose your action:
-        0 - exit the program, 
-        1 - select a password,
+        0 - exit the programrd,
         2 - add a password,
-        3 - update a password,
+        3 - update a password,, 
+        1 - select a passwo
         4 - delete a password,
         Please enter the relevant number: """
 
