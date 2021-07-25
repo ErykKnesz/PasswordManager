@@ -1,6 +1,6 @@
 import sql
 import menu
-import getpass
+
 
 if __name__ == '__main__':
     conn = sql.create_connection(r"database.db")
