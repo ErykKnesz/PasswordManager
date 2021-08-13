@@ -1,20 +1,28 @@
-import sqlite3
-from sqlite3 import Error
+from getpass import getpass
+from mysql.connector import connect, Error
 import logging
 
 logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s %(message)s',
                     filename="logfile.log")
 
+USER = input("Enter username: ")
+PASSWORD = getpass("Enter password: ")
 
-def create_connection(db_file):
+
+def create_connection(database):
     """ create a database connection to a SQLite database """
     conn = None
     try:
-        conn = sqlite3.connect(db_file)
+        conn = connect(
+            host="localhost",
+            user=USER,
+            password=PASSWORD,
+            database=database,
+        )
+        return conn
     except Error as e:
         logging.error(e)
-    return conn
 
 
 def execute_sql(conn, sql, params=None):
@@ -24,20 +32,35 @@ def execute_sql(conn, sql, params=None):
     :param params
     :return:
     """
-    c = conn.cursor()
+    with conn.cursor(buffered=True) as cursor:
+        try:
+            if params is None:
+                cursor.execute(sql)
+            else:
+                cursor.execute(sql, params)
+            return cursor
+        except Error as e:
+            logging.error(e)
+
+
+def create_database():
+    sql = """CREATE DATABASE if not exists PasswordManager"""
+    conn = None
     try:
-        if params is None:
-            c.execute(sql)
-        else:
-            c.execute(sql, params)
+        with connect(
+                host="localhost",
+                user=USER,
+                password=PASSWORD,
+        ) as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(sql)
     except Error as e:
         logging.error(e)
-    return c
 
 
 def create_table(conn):
     sql = """CREATE TABLE if not exists passwords (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id INTEGER PRIMARY KEY AUTO_INCREMENT,
     name VARCHAR(255) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL
     );"""
@@ -53,7 +76,7 @@ def add_password(conn, name, password):
     :return: password id
     """
     sql = '''INSERT INTO passwords(name, password)
-             VALUES(?,?)'''
+             VALUES(%s, %s)'''
     cur = execute_sql(conn, sql, (name, password))
     conn.commit()
     return cur.lastrowid
@@ -81,7 +104,7 @@ def select_passwords_where(conn, **query):
     qs = []
     values = ()
     for k, v in query.items():
-        qs.append(f"{k}=?")
+        qs.append(f"{k}=%s")
         values += (v,)
     q = " AND ".join(qs)
     sql = f"SELECT * FROM passwords WHERE {q}"
@@ -97,7 +120,7 @@ def select_password(conn, name):
     :param name: name to which the password is assigned
     :return:
     """
-    sql = f"SELECT password FROM passwords WHERE name=?"
+    sql = f"SELECT password FROM passwords WHERE name=%s"
     cur = execute_sql(conn, sql, (name,))
     password = cur.fetchone()
     return password
@@ -117,13 +140,13 @@ def update(conn, id, **kwargs):
 
     sql = f''' UPDATE passwords
              SET {parameters}
-             WHERE id = ?'''
+             WHERE id = %s'''
 
     try:
         execute_sql(conn, sql, values)
         conn.commit()
-    except sqlite3.OperationalError as e:
-        logging.ERROR(e)
+    except Error as e:
+        logging.error(e)
 
 
 def delete(conn, id):

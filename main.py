@@ -3,7 +3,8 @@ import menu
 
 
 if __name__ == '__main__':
-    conn = sql.create_connection(r"database.db")
+    sql.create_database()
+    conn = sql.create_connection(r"PasswordManager")
     sql.create_table(conn)
     is_on = True
     while is_on:

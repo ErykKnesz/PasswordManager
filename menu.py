@@ -1,3 +1,5 @@
+import logging
+
 import sql
 from tkinter import Tk
 import security
@@ -6,11 +8,11 @@ import security
 def ask_for_prompt():
     """Ask the user to choose an option from menu"""
     prompt = """Choose your action:
-        0 - exit the programrd,
+        0 - exit the program,
+        1 - select a password,
         2 - add a password,
-        3 - update a password,, 
-        1 - select a passwo
-        4 - delete a password,
+        3 - update a password,
+        4 - delete a password.
         Please enter the relevant number: """
 
     try:
@@ -41,13 +43,17 @@ def perform_desired_action(conn, option):
 def perform_select_password(conn):
     name = input("Enter the name to select this password from DB: ")
     row = sql.select_passwords_where(conn, name=name)
-    password = row[0][2]
-    r = Tk()
-    r.withdraw()
-    r.clipboard_clear()
-    r.clipboard_append(password)
-    r.update()  # now it stays on the clipboard after the window is closed
-    return password
+    try:
+        password = row[0][2]
+        r = Tk()
+        r.withdraw()
+        r.clipboard_clear()
+        r.clipboard_append(password)
+        r.update()  # now it stays on the clipboard after the window is closed
+        return password
+    except IndexError as e:
+        logging.error(e)
+        print("No such password found")
 
 
 def perform_add(conn):
@@ -66,15 +72,22 @@ def perform_add(conn):
 def perform_update(conn):
     name = input("Provide the name of the password you want to update: ")
     db_row = sql.select_passwords_where(conn, name=name)
+    try:
+        id = db_row[0][0]
+    except IndexError as e:
+        logging.error(e)
+        print("No such password found")
+        return ask_for_prompt()
+
     new_name = input(f"Update current name: {name}. New name: ")
 
     while True:
         new_password_1 = input(f"Update password for {name}. New one: ")
         new_password_2 = input(f"Reenter the new password for {name}: ")
-        id = db_row[0][0]
+
         if new_password_1 == new_password_2:
             sql.update(conn, id,
-                       name=new_name, password=new_password_1)
+                          name=new_name, password=new_password_1)
             break
         else:
             continue
