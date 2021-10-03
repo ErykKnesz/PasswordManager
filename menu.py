@@ -1,99 +1,125 @@
 import logging
-
-import sql
 from tkinter import Tk
 import security
+import commands
 
 
-def ask_for_prompt():
-    """Ask the user to choose an option from menu"""
-    prompt = """Choose your action:
-        0 - exit the program,
-        1 - select a password,
-        2 - add a password,
-        3 - update a password,
-        4 - delete a password.
-        Please enter the relevant number: """
+class Option:
+    def __init__(self, name, command, prep_call=None,
+                 prep_call_required=False):
+        self.name = name
+        self.command = command
+        self.prep_call = prep_call
+        self.prep_call_required = prep_call_required
 
-    try:
-        option = int(input(prompt))
-        if option in range(5):
-            return option
+    def choose(self):
+        data = self.prep_call() if self.prep_call else None
+        if self.prep_call_required and data is None:
+            print("Wrong data provided")
         else:
-            print("No such option, try again!")
-            return ask_for_prompt()
-    except ValueError:
-        print("Only numbers from 0 to 4 are allowed")
-        return ask_for_prompt()
+            message = (self.command.execute(data)
+                       if data else self.command.execute())
+
+            print(message)
+
+    def __str__(self):
+        return self.name
 
 
-def perform_desired_action(conn, option):
-    if option == 0:
-        exit()
-    elif option == 1:
-        perform_select_password(conn)
-    elif option == 2:
-        perform_add(conn)
-    elif option == 3:
-        perform_update(conn)
-    elif option == 4:
-        perform_delete(conn)
+def print_options(options):
+    for shortcut, option in options.items():
+        print(f'({shortcut}) {option}')
+        print()
 
 
-def perform_select_password(conn):
-    name = input("Enter the name to select this password from DB: ")
-    row = sql.select_passwords_where(conn, name=name)
+def option_choice_is_valid(choice, options):
+    return choice in options or choice.upper() in options
+
+
+def get_option_choice(options):
+    choice = input('Choose an option:')
+    while not option_choice_is_valid(choice, options):
+        print("Wrong choice")
+        choice = input('Choose an option:')
+    return options[choice.upper()]
+
+
+def get_user_input(label, required=True):
+    value = input(f'{label}: ') or None
+    while required and not value:
+        value = input(f'{label}: ') or None
+    return value
+
+
+def passwords_match(password):
+    pass_confirm = get_user_input('Confirm password')
+    return password == pass_confirm
+
+
+def get_new_password_data():
+    name = get_user_input("Name")
+    while True:
+        password = get_user_input('Password')
+        if passwords_match(password):
+            return {
+                'name': name,
+                'password': password
+            }
+        else:
+            print("Passwords do not match!")
+
+
+def find_id(name):
+    db_row = commands.passwords_by.execute(name=name)
     try:
-        password = row[0][2]
-        r = Tk()
-        r.withdraw()
-        r.clipboard_clear()
-        r.clipboard_append(password)
-        r.update()  # now it stays on the clipboard after the window is closed
-        return password
+        return db_row[0][0]
     except IndexError as e:
         logging.error(e)
+
+
+def get_retrieve_data():
+    name = get_user_input("Name")
+    return {'name': name}
+
+
+def get_update_data():
+    name = get_user_input("Name")
+    id = find_id(name)
+    if id is None:
         print("No such password found")
-
-
-def perform_add(conn):
-    name = input("Enter the name of the service or tool/program: ")
-    while True:
-        password_1 = input("Enter the password: ")
-        password_2 = input("Enter the password again: ")
-        if password_1 == password_2:
-            sql.add_password(conn, name, password_1)
-            break
-        else:
-            print("The passwords do not match")
-            continue
-
-
-def perform_update(conn):
-    name = input("Provide the name of the password you want to update: ")
-    db_row = sql.select_passwords_where(conn, name=name)
-    try:
-        id = db_row[0][0]
-    except IndexError as e:
-        logging.error(e)
-        print("No such password found")
-        return ask_for_prompt()
-
-    new_name = input(f"Update current name: {name}. New name: ")
+        return None
+    want_new_name = input(
+        f"Do you want to update the name too (press ENTER if not)?"
+    )
+    if want_new_name:
+        name = get_user_input('Name')
 
     while True:
-        new_password_1 = input(f"Update password for {name}. New one: ")
-        new_password_2 = input(f"Reenter the new password for {name}: ")
-
-        if new_password_1 == new_password_2:
-            sql.update(conn, id,
-                          name=new_name, password=new_password_1)
-            break
-        else:
-            continue
+        password = get_user_input('Password')
+        if passwords_match(password):
+            return {
+                'id': id,
+                'name': name,
+                'password': password
+            }
 
 
-def perform_delete(conn):
-    name = input("Provide the name of the password you want to delete: ")
-    db_row = sql.select_passwords_where(conn, name=name)
-    sql.delete(conn, db_row[0][0])
+def get_delete_data():
+    name = get_user_input("Name")
+    id = find_id(name)
+    if id is not None:
+        return id
+    print("No such password found")
+
+
+options = {
+    'A': Option('Add password', commands.AddPasswordCommand(),
+                prep_call=get_new_password_data, prep_call_required=True),
+    'B': Option('Select a password', commands.RetrievePasswordCommand(),
+                prep_call=get_retrieve_data, prep_call_required=True),
+    'C': Option('Update password', commands.UpdatePasswordCommand(),
+                prep_call=get_update_data, prep_call_required=True),
+    'D': Option('Delete password', commands.DeletePasswordCommand(),
+                prep_call=get_delete_data, prep_call_required=True),
+    'Q': Option('Quit', commands.QuitCommand())
+}

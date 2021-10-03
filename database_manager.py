@@ -1,13 +1,14 @@
 from getpass import getpass
 from mysql.connector import connect, Error
 import logging
+import os
 
 logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s %(message)s',
                     filename="logfile.log")
 
-USER = input("Enter username: ")
-PASSWORD = getpass("Enter password: ")
+USER = os.environ.get('USER') or input("Enter username: ")
+PASSWORD = os.environ.get('PASSWORD') or getpass("Enter password: ")
 
 
 class DatabaseManager:
@@ -29,7 +30,6 @@ class DatabaseManager:
 
     def __del__(self):
         self.connection.close()
-
 
     def _execute_sql(self, sql, params=None):
         """ Execute sql
@@ -56,7 +56,6 @@ class DatabaseManager:
         except Error as e:
             logging.error(e)
 
-
     def create_table(self, table_name, columns):
         columns_with_types = [
             f" {column_name} {data_type}"
@@ -67,7 +66,6 @@ class DatabaseManager:
               );"""
         self._execute_sql(sql)
         self.connection.commit()
-
 
     def add_password(self, name, password):
         """
@@ -82,7 +80,6 @@ class DatabaseManager:
         self.connection.commit()
         return cur.lastrowid
 
-
     def select_all(self):
         """
         Query all rows in the table
@@ -91,9 +88,7 @@ class DatabaseManager:
         """
         sql = "SELECT * FROM passwords ORDER BY name"
         cur = self._execute_sql(sql)
-        rows = cur.fetchall()
-        return rows
-
+        return cur.fetchall()
 
     def select_passwords_where(self, **query):
         """
@@ -110,11 +105,9 @@ class DatabaseManager:
         q = " AND ".join(qs)
         sql = f"SELECT * FROM passwords WHERE {q}"
         cur = self._execute_sql(sql, values)
-        rows = cur.fetchall()
-        return rows
+        return cur.fetchall()
 
-
-    def select_password(self, name):
+    def retrieve_password(self, name):
         """
         Query tasks from table with data from **query dict
         :param conn: the Connection object
@@ -123,18 +116,15 @@ class DatabaseManager:
         """
         sql = f"SELECT password FROM passwords WHERE name=%s"
         cur = self._execute_sql(sql, (name,))
-        password = cur.fetchone()
-        return password
-
+        return cur.fetchone()
 
     def update(self, id, **kwargs):
         """
         update password
-        :param conn:
         :param id: row id
         :return:
         """
-        parameters = [f"{k} = ?" for k in kwargs]
+        parameters = [f"{k} = %s" for k in kwargs]
         parameters = ", ".join(parameters)
         values = tuple(v for v in kwargs.values())
         values += (id,)
@@ -149,15 +139,13 @@ class DatabaseManager:
         except Error as e:
             logging.error(e)
 
-
-    def delete(self, id):
+    def delete(self, table, id):
         """
         delete password
         :param conn:
         :param id: row id
         :return:
         """
-        sql = "DELETE FROM passwords WHERE id=?"
+        sql = f"DELETE FROM {table} WHERE id = %s"
         self._execute_sql(sql, (id,))
         self.connection.commit()
-
