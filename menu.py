@@ -1,7 +1,8 @@
-import logging
-from tkinter import Tk
-import security
+from getpass import getpass
 import commands
+from  database_manager import PASSWORD
+from validators import (option_choice_is_valid, passwords_match,
+                        find_id, user_is_authorised, get_user_input)
 
 
 class Option:
@@ -32,10 +33,6 @@ def print_options(options):
         print()
 
 
-def option_choice_is_valid(choice, options):
-    return choice in options or choice.upper() in options
-
-
 def get_option_choice(options):
     choice = input('Choose an option:')
     while not option_choice_is_valid(choice, options):
@@ -43,17 +40,6 @@ def get_option_choice(options):
         choice = input('Choose an option:')
     return options[choice.upper()]
 
-
-def get_user_input(label, required=True):
-    value = input(f'{label}: ') or None
-    while required and not value:
-        value = input(f'{label}: ') or None
-    return value
-
-
-def passwords_match(password):
-    pass_confirm = get_user_input('Confirm password')
-    return password == pass_confirm
 
 
 def get_new_password_data():
@@ -69,14 +55,6 @@ def get_new_password_data():
             print("Passwords do not match!")
 
 
-def find_id(name):
-    db_row = commands.passwords_by.execute(name=name)
-    try:
-        return db_row[0][0]
-    except IndexError as e:
-        logging.error(e)
-
-
 def get_retrieve_data():
     name = get_user_input("Name")
     return {'name': name}
@@ -88,26 +66,27 @@ def get_update_data():
     if id is None:
         print("No such password found")
         return None
-    want_new_name = input(
-        f"Do you want to update the name too (press ENTER if not)?"
-    )
-    if want_new_name:
-        name = get_user_input('Name')
+    elif user_is_authorised():
+        want_new_name = input(
+            f"Do you want to update the name too (press ENTER if not)?"
+        )
+        if want_new_name:
+            name = get_user_input('Name')
 
-    while True:
-        password = get_user_input('Password')
-        if passwords_match(password):
-            return {
-                'id': id,
-                'name': name,
-                'password': password
-            }
+        while True:
+            password = get_user_input('Password')
+            if passwords_match(password):
+                return {
+                    'id': id,
+                    'name': name,
+                    'password': password
+                }
 
 
 def get_delete_data():
     name = get_user_input("Name")
     id = find_id(name)
-    if id is not None:
+    if id is not None and user_is_authorised():
         return id
     print("No such password found")
 
