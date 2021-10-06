@@ -1,6 +1,7 @@
 import sys
 import logging
 from tkinter import Tk
+import cryptography
 from database_manager import DatabaseManager
 import security
 
@@ -43,11 +44,13 @@ class RetrievePasswordCommand:
             r.withdraw()
             r.clipboard_clear()
             r.clipboard_append(password)
-            r.update()  # now it stays on the clipboard after the window is closed
+            r.update()
             return 'Password found and copied'
         except IndexError as e:
             logging.error(e)
             return "No such password found"
+        except cryptography.fernet.InvalidToken:
+            return "Unauthorised, invalid token used"
 
 
 class DeletePasswordCommand:

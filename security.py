@@ -1,5 +1,11 @@
 from cryptography.fernet import Fernet
-key = b'3TQWJL-6W7lEBUf9vCi3HNTEdJx-HhzVbg2MGoXJ5jU=' # Fernet.generate_key()
+
+try:
+    with open('key.bin', 'rb') as file_object:
+        for line in file_object:
+            key = line
+except FileNotFoundError:
+    key = Fernet.generate_key()
 
 
 def encrypt_psw(password):
