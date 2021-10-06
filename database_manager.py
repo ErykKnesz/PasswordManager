@@ -7,7 +7,7 @@ logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s %(message)s',
                     filename="logfile.log")
 
-USER = os.environ.get('USER') or input("Enter username: ")
+DB_USER = os.environ.get('DB_USER') or input("Enter username: ")
 PASSWORD = os.environ.get('PASSWORD') or getpass("Enter password: ")
 
 
@@ -20,7 +20,7 @@ class DatabaseManager:
         try:
             conn = connect(
                 host="localhost",
-                user=USER,
+                user=DB_USER,
                 password=PASSWORD,
                 database=database,
             )
