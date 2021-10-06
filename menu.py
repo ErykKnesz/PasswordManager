@@ -1,6 +1,4 @@
-from getpass import getpass
 import commands
-from  database_manager import PASSWORD
 from validators import (option_choice_is_valid, passwords_match,
                         find_id, user_is_authorised, get_user_input)
 
@@ -39,7 +37,6 @@ def get_option_choice(options):
         print("Wrong choice")
         choice = input('Choose an option:')
     return options[choice.upper()]
-
 
 
 def get_new_password_data():
@@ -88,7 +85,6 @@ def get_delete_data():
     id = find_id(name)
     if id is not None and user_is_authorised():
         return id
-    print("No such password found")
 
 
 options = {

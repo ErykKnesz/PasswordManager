@@ -2,6 +2,7 @@ import sys
 import logging
 from tkinter import Tk
 from database_manager import DatabaseManager
+import security
 
 db = DatabaseManager("PasswordManager")
 
@@ -17,7 +18,8 @@ class CreatePasswordsTableCommand:
 
 class AddPasswordCommand:
     def execute(self, data):
-        db.add_password(data['name'], data['password'])
+        password = security.encrypt_psw(data['password']) # encryption
+        db.add_password(data['name'], password)
         return "Password added!"
 
 
@@ -36,6 +38,7 @@ class RetrievePasswordCommand:
         row = db.retrieve_password(data['name'])
         try:
             password = row[0]
+            password = security.decrypt_psw(password) # decryption
             r = Tk()
             r.withdraw()
             r.clipboard_clear()
@@ -65,4 +68,11 @@ class QuitCommand:
         sys.exit()
 
 
+create_table = CreatePasswordsTableCommand()
+add = AddPasswordCommand()
+list_passwords = ListAllPasswordsCommand()
 passwords_by = ListAllPasswordsWhereCommand()
+retrieve = RetrievePasswordCommand()
+update = UpdatePasswordCommand()
+delete = DeletePasswordCommand()
+quit = QuitCommand()

@@ -29,7 +29,8 @@ class DatabaseManager:
             logging.error(e)
 
     def __del__(self):
-        self.connection.close()
+        if self.connection is not None:
+            self.connection.close()
 
     def _execute_sql(self, sql, params=None):
         """ Execute sql

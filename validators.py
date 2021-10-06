@@ -9,7 +9,8 @@ def option_choice_is_valid(choice, options):
 
 
 def get_user_input(label, required=True):
-    value = input(f'{label}: ') or None
+    value = (input(f'{label}: ') if 'password' not in label.lower()
+             else getpass(f'{label}: '))
     while required and not value:
         value = input(f'{label}: ') or None
     return value
@@ -29,5 +30,5 @@ def find_id(name):
 
 
 def user_is_authorised():
-    password = getpass("Enter password: ")
+    password = get_user_input("Enter User's password")
     return password == PASSWORD

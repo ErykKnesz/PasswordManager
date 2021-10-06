@@ -5,9 +5,12 @@ import menu
 db = DatabaseManager("PasswordManager")
 
 if __name__ == '__main__':
-    db.create_database()
-    create_table = commands.CreatePasswordsTableCommand()
-    create_table.execute()
+    try:
+        db.create_database()
+        commands.create_table.execute()
+    except AttributeError:
+        print("Wrong credentials")
+        commands.quit.execute()
     is_on = True
     while is_on:
         passwords = commands.ListAllPasswordsCommand()
