@@ -21,14 +21,14 @@ def passwords_match(password):
     return password == pass_confirm
 
 
+def user_is_authenticated():
+    password = get_user_input("Enter User's password")
+    return password == PASSWORD
+
+
 def find_id(name):
-    db_row = commands.passwords_by.execute(name=name)
+    db_row = commands.ListAllPasswordsWhereCommand().execute(name=name)
     try:
         return db_row[0][0]
     except IndexError as e:
         logging.error(e)
-
-
-def user_is_authorised():
-    password = get_user_input("Enter User's password")
-    return password == PASSWORD
