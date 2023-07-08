@@ -3,8 +3,9 @@ import logging
 from tkinter import Tk
 import cryptography
 from database_manager import DatabaseManager
-import security
+from security import Cryptographer
 
+cryptographer = Cryptographer()
 db = DatabaseManager("PasswordManager")
 
 
@@ -19,7 +20,7 @@ class CreatePasswordsTableCommand:
 
 class AddPasswordCommand:
     def execute(self, data):
-        password = security.encrypt_psw(data['password']) # encryption
+        password = cryptographer.encrypt_psw(data['password']) # encryption
         db.add_password(data['name'], password)
         return "Password added!"
 
@@ -39,14 +40,14 @@ class RetrievePasswordCommand:
         row = db.retrieve_password(data['name'])
         try:
             password = row[0]
-            password = security.decrypt_psw(password) # decryption
+            password = cryptographer.decrypt_psw(password)  # decryption
             r = Tk()
             r.withdraw()
             r.clipboard_clear()
             r.clipboard_append(password)
             r.update()
             return 'Password found and copied'
-        except IndexError as e:
+        except (IndexError, TypeError) as e:
             logging.error(e)
             return "No such password found"
         except cryptography.fernet.InvalidToken:
@@ -69,13 +70,3 @@ class UpdatePasswordCommand:
 class QuitCommand:
     def execute(self):
         sys.exit()
-
-
-create_table = CreatePasswordsTableCommand()
-add = AddPasswordCommand()
-list_passwords = ListAllPasswordsCommand()
-passwords_by = ListAllPasswordsWhereCommand()
-retrieve = RetrievePasswordCommand()
-update = UpdatePasswordCommand()
-delete = DeletePasswordCommand()
-quit = QuitCommand()

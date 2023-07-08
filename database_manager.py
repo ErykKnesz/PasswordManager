@@ -71,7 +71,7 @@ class DatabaseManager:
     def add_password(self, name, password):
         """
         Create a new password into the passwords table
-        :param conn:
+        :param name:
         :param password:
         :return: password id
         """
@@ -84,8 +84,7 @@ class DatabaseManager:
     def select_all(self):
         """
         Query all rows in the table
-        :param conn: the Connection object
-        :return:
+        :return: query result
         """
         sql = "SELECT * FROM passwords ORDER BY name"
         cur = self._execute_sql(sql)
@@ -94,9 +93,8 @@ class DatabaseManager:
     def select_passwords_where(self, **query):
         """
         Query tasks from table with data from **query dict
-        :param conn: the Connection object
-        :param query: dict of attributes and values
-        :return:
+        :param query: a dict of attributes and values
+        :return: query result
         """
         qs = []
         values = ()
@@ -111,9 +109,8 @@ class DatabaseManager:
     def retrieve_password(self, name):
         """
         Query tasks from table with data from **query dict
-        :param conn: the Connection object
         :param name: name to which the password is assigned
-        :return:
+        :return: query result
         """
         sql = f"SELECT password FROM passwords WHERE name=%s"
         cur = self._execute_sql(sql, (name,))
@@ -123,7 +120,7 @@ class DatabaseManager:
         """
         update password
         :param id: row id
-        :return:
+        :return: None
         """
         parameters = [f"{k} = %s" for k in kwargs]
         parameters = ", ".join(parameters)
@@ -143,9 +140,9 @@ class DatabaseManager:
     def delete(self, table, id):
         """
         delete password
-        :param conn:
+        :param table: DB table name
         :param id: row id
-        :return:
+        :return: None
         """
         sql = f"DELETE FROM {table} WHERE id = %s"
         self._execute_sql(sql, (id,))
