@@ -25,16 +25,13 @@ cli_menu = Menu(cli_options)
 db = DatabaseManager("PasswordManager")
 
 if __name__ == '__main__':
-
     try:
         db.create_database()
         commands.CreatePasswordsTableCommand().execute()
     except AttributeError:
         print("Wrong credentials")
         commands.QuitCommand().execute()
-
-    passwords = commands.ListAllPasswordsCommand().execute()
-
+    passwords_command = commands.ListAllPasswordsCommand()
     if args.gui is True:
         import gui
         gui_app = gui.GUI()
@@ -42,9 +39,8 @@ if __name__ == '__main__':
     else:
         passman_is_running = True
         while passman_is_running:
-
             print("Your database includes passwords for:")
-            for title in passwords:
+            for title in passwords_command.execute():
                 print(f"- {title[1]}",
                       end="\n")
             cli_menu.print_options()

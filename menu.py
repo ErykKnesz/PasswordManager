@@ -29,49 +29,55 @@ class Option:
 class Prompter:
 
     def get_option_choice(self, options):
-        choice = input('Choose an option:')
+        choice = input("Choose an option:")
         while not option_choice_is_valid(choice, options):
             print("Wrong choice")
-            choice = input('Choose an option:')
+            choice = input("Choose an option:")
         return options[choice.upper()]
 
     def get_new_password_data(self):
         name = get_user_input("Name")
+        login = get_user_input("Login")
         while True:
-            password = get_user_input('Password')
+            password = get_user_input("Password")
             if passwords_match(password):
                 return {
-                    'name': name,
-                    'password': password
+                    "name": name,
+                    "login": login,
+                    "password": password
                 }
             else:
                 print("Passwords do not match!")
 
     def get_retrieve_data(self):
         name = get_user_input("Name")
-        return {'name': name}
+        return {"name": name}
 
     def get_update_data(self):
         name = get_user_input("Name")
         obj_id = find_id(name)
+        update_data = {"id": obj_id, }
         if obj_id is None:
             print("No such data found")
             return None
         elif user_is_authenticated():
             want_new_name = input(
-                f"Do you want to update the name too (press ENTER if not)?"
+                f"Do you want to update the name too (type yes if so)?"
             )
-            if want_new_name:
-                name = get_user_input('Name')
+            if want_new_name.lower() == "yes":
+                update_data["name"] = get_user_input("Name")
+
+            want_new_login = input(
+                f"Do you want to update the login too (type yes if so)?"
+            )
+            if want_new_login.lower() == "yes":
+                update_data["login"] = get_user_input("Login")
 
             while True:
-                password = get_user_input('Password')
+                password = get_user_input("Password")
                 if passwords_match(password):
-                    return {
-                        'id': obj_id,
-                        'name': name,
-                        'password': password
-                    }
+                    update_data["password"] = password
+                    return update_data
 
     def get_delete_data(self):
         name = get_user_input("Name")
@@ -86,7 +92,7 @@ class Menu:
 
     def print_options(self):
         for shortcut, option in self.options.items():
-            print(f'({shortcut}) {option}')
+            print(f"({shortcut}) {option}")
             print()
 
 

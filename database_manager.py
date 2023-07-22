@@ -68,16 +68,17 @@ class DatabaseManager:
         self._execute_sql(sql)
         self.connection.commit()
 
-    def add_password(self, name, password):
+    def add_password(self, name, login, password):
         """
         Create a new password into the passwords table
         :param name:
         :param password:
+        :param login:
         :return: password id
         """
-        sql = '''INSERT INTO passwords(name, password)
-                 VALUES(%s, %s)'''
-        cur = self._execute_sql(sql, (name, password))
+        sql = """INSERT INTO passwords(name, login, password)
+                 VALUES(%s, %s, %s)"""
+        cur = self._execute_sql(sql, (name, login, password))
         self.connection.commit()
         return cur.lastrowid
 

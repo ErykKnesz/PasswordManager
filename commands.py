@@ -14,15 +14,15 @@ class CreatePasswordsTableCommand:
         db.create_table('passwords', {
             'id': 'INTEGER PRIMARY KEY AUTO_INCREMENT',
             'name': 'VARCHAR(255) NOT NULL UNIQUE',
+            'login': 'VARCHAR(255) NOT NULL',
             'password': 'VARCHAR(255) NOT NULL',
         })
 
 
 class AddPasswordCommand:
     def execute(self, data):
-        password = cryptographer.encrypt_psw(data['password']) # encryption
-        db.add_password(data['name'], password)
-        return "Password added!"
+        data["password"] = cryptographer.encrypt_psw(data["password"])  # encryption
+        return db.add_password(data["name"], data["login"], data["password"])
 
 
 class ListAllPasswordsCommand:
@@ -55,14 +55,15 @@ class RetrievePasswordCommand:
 
 
 class DeletePasswordCommand:
-    def execute(self, data):
-        db.delete('passwords', data)
+    def execute(self, obj_id):
+        db.delete('passwords', obj_id)
         return "Password deleted!"
 
 
 class UpdatePasswordCommand:
     def execute(self, data):
-        id = data.pop('id')
+        id = data.pop("id")
+        data["password"] = cryptographer.encrypt_psw(data["password"])  # encryption
         db.update(id, **data)
         return "Password updated!"
 
