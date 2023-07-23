@@ -140,10 +140,11 @@ class GUI(tkinter.Tk):
     def close_menu(self, event):
         self.table.menu.unpost()
 
-    def open_edit_mode(self):
+    def open_edit_mode(self, event):
         self.edit_frame.grid(row=0, column=1)
+        item = self.table.identify("item", event.x, event.y) # to edit!
         self.edit_frame.winfo_children()[2].focus_set()
-        self.edit_frame.winfo_children()[2].insert(0,text)
+        self.edit_frame.winfo_children()[2].insert(0,"dummy text")
         print(self.edit_frame.winfo_children())
         self.edit_frame.grab_set()
 
@@ -151,13 +152,11 @@ class GUI(tkinter.Tk):
         self.edit_frame.grab_release()
         self.edit_frame.grid_forget()
 
-
     def get_password(self, event):
-        print(event)
-        for item in self.table.selection():
-            title = self.table.item(item, 'values')[1]
-            commands.RetrievePasswordCommand().execute({"name": title})
-            messagebox.showinfo("Success", "Password is in your clipboard now!")
+        item = self.table.identify("item", event.x, event.y)
+        title = self.table.item(item, 'values')[1]
+        commands.RetrievePasswordCommand().execute({"name": title})
+        messagebox.showinfo("Success", "Password is in your clipboard now!")
 
     def add_item(self):
         data = {
