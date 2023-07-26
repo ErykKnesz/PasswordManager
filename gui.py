@@ -46,29 +46,34 @@ class GUI(tkinter.Tk):
         self.password_entry.grid(row=4, column=1)
 
         # Buttons
-        self.generate_pass_button = tkinter.Button(text="Generate Password", width=14,
+        self.generate_pass_button = tkinter.Button(text="Generate Password",
+                                                   width=14,
                                                    background=BTN_INFO_BG,
                                                    activebackground=BTN_INFO_BG_ACTIVE,
                                                    command="generate_password")
         self.generate_pass_button.grid(row=3, column=2)
-        self.add_button = tkinter.Button(text="Add", width=21,
+        self.add_button = tkinter.Button(text="Add",
+                                         width=21,
                                          background=BTN_SUCCESS_BG,
                                          activebackground=BTN_SUCCESS_BG_ACTIVE,
                                          command=self.add_item)
         self.add_button.grid(row=5, column=1)
-        self.delete_button = tkinter.Button(text="Delete", width=14,
+        self.delete_button = tkinter.Button(text="Delete",
+                                            width=14,
                                             background=BTN_DANGER_BG,
                                             activebackground=BTN_DANGER_BG_ACTIVE,
                                             command=self.delete_item)
         self.delete_button.grid(row=4, column=2)
 
         # Edit Frame
-        self.edit_frame = tkinter.Frame(self, bg=EDIT_BG,
+        self.edit_frame = tkinter.Frame(self,
+                                        bg=EDIT_BG,
                                         highlightbackground="black",
                                         highlightthickness=0.5)
         self.edit_frame.grid(row=0, column=1)
         self.edit_frame.grid_forget()  # hide until enabled
-        self.close_edit_button = tkinter.Button(self.edit_frame, text="X",
+        self.close_edit_button = tkinter.Button(self.edit_frame,
+                                                text="X",
                                                 command=self.close_edit_mode,
                                                 background=BTN_DANGER_BG,
                                                 activebackground=BTN_DANGER_BG_ACTIVE,
@@ -85,7 +90,8 @@ class GUI(tkinter.Tk):
         self.edit_login_label.pack()
         self.edit_login_entry = tkinter.Entry(self.edit_frame, bg=EDIT_BG)
         self.edit_login_entry.pack(expand=True)
-        self.edit_password_label = tkinter.Label(self.edit_frame, text="Password:",
+        self.edit_password_label = tkinter.Label(self.edit_frame,
+                                                 text="Password:",
                                                  bg=EDIT_BG)
         self.edit_password_label.pack()
         self.edit_password_entry = tkinter.Entry(self.edit_frame, bg=EDIT_BG)
@@ -97,15 +103,9 @@ class GUI(tkinter.Tk):
             text="Update",
             width=14,
             pady=5,
-            command=lambda: commands.UpdatePasswordCommand(
-                ).execute({
-                    "name": self.edit_title_entry.get(),
-                    "login": self.edit_login_entry.get(),
-                    "password": self.edit_password_entry.get()
-                         })
-            )
+            command=lambda: (self.update_item(), self.close_edit_mode())
+        )
         self.update_button.pack(fill=tkinter.BOTH, expand=True)
-
 
     def create_table_widget(self):
         columns = ("id", "title",)
@@ -113,18 +113,22 @@ class GUI(tkinter.Tk):
         table.heading("id", text="id")
         table.heading("title", text="Title")
         table["displaycolumns"] = ("title",)
-        table.bind("<Button-3>", self.open_menu)
+        table.bind("<Button-3>", lambda event: (self.select_item(event),
+                                                self.open_menu(event)))
         table.bind("<Double-1>", self.get_password)
         table.grid(row=0, column=0, sticky=tkinter.NSEW)
 
         scrollbar = ttk.Scrollbar(self, orient=tkinter.VERTICAL, command=table.yview)
-        self.bind("<Button-4>", lambda event: self.table.yview_scroll(int(-1*event.num), "units"))
+        self.bind("<Button-4>",
+                  lambda event: self.table.yview_scroll(int(-1*event.num),
+                                                        "units"))
         table.configure(yscroll=scrollbar.set)
         scrollbar.grid(row=0, column=1, sticky="nsw")
 
         #  Right click context menu
         table.menu = tkinter.Menu(table, tearoff=0)
         table.menu.add_command(label="Edit", command=self.open_edit_mode)
+
         table.menu.bind("<FocusOut>", self.close_menu)
 
         for i in commands.ListAllPasswordsCommand().execute():
@@ -140,12 +144,21 @@ class GUI(tkinter.Tk):
     def close_menu(self, event):
         self.table.menu.unpost()
 
-    def open_edit_mode(self, event):
+    def select_item(self, event):
+        iid = self.table.identify_row(event.y)
+        if iid:
+            self.table.selection_set(iid)
+
+    def open_edit_mode(self):
         self.edit_frame.grid(row=0, column=1)
-        item = self.table.identify("item", event.x, event.y) # to edit!
-        self.edit_frame.winfo_children()[2].focus_set()
-        self.edit_frame.winfo_children()[2].insert(0,"dummy text")
-        print(self.edit_frame.winfo_children())
+        selected_item = self.table.selection()[0]
+        obj_id, title, login, pswd = self.table.item(selected_item, "values")
+        self.edit_title_entry.focus_set()
+        self.edit_title_entry.delete(0, tkinter.END)
+        self.edit_title_entry.insert(0, title)
+        self.edit_login_entry.delete(0, tkinter.END)
+        self.edit_login_entry.insert(0, login)
+        self.edit_password_entry.delete(0, tkinter.END)
         self.edit_frame.grab_set()
 
     def close_edit_mode(self):
@@ -154,7 +167,7 @@ class GUI(tkinter.Tk):
 
     def get_password(self, event):
         item = self.table.identify("item", event.x, event.y)
-        title = self.table.item(item, 'values')[1]
+        title = self.table.item(item, "values")[1]
         commands.RetrievePasswordCommand().execute({"name": title})
         messagebox.showinfo("Success", "Password is in your clipboard now!")
 
@@ -165,26 +178,27 @@ class GUI(tkinter.Tk):
             "password": self.password_entry.get(),
         }
         lastrowid = commands.AddPasswordCommand().execute(data)
-        self.table.insert('', tkinter.END, values=(lastrowid,
+        self.table.insert("", tkinter.END, values=(lastrowid,
                                                    data["name"],
                                                    data["login"],
                                                    data["password"]))
 
     def delete_item(self):
         for item in self.table.selection():
-            obj_id = self.table.item(item, 'values')[0]
+            obj_id = self.table.item(item, "values")[0]
             self.table.delete(item)
             commands.DeletePasswordCommand().execute(obj_id)
 
     def update_item(self):
         selected_item = self.table.selection()[0]
         obj_id = self.table.item(selected_item, "values")[0]
-        data = {}
-        commands.UpdatePasswordCommand().execute(obj_id, data)
-        self.table.item(selected_item, text="blub", values=("foo", "bar"))
-        self.edit_frame.grid_forget()
-        pass # see above
+        data = {
+            "id": obj_id,
+            "name": self.edit_title_entry.get(),
+            "login": self.edit_login_entry.get(),
+            "password": self.edit_password_entry.get()
+        }
 
-
-
-
+        commands.UpdatePasswordCommand().execute(data)
+        self.table.item(selected_item,
+                        values=(obj_id,) + tuple(data.values()))
